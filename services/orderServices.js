@@ -97,9 +97,10 @@ exports.webhookCheckout = asyncHandler(async (req, res, next) => {
         event = stripe.webhooks.constructEvent(
             req.body,
             sig,
-            process.env.STRIPE_WEBHOOK_SECRET
+            "whsec_V8uGZTsI6wwNjmw6MyScG6NhWVF2VWEX"
         );
     } catch (err) {
+        console.log("there is problem here")
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
     if (event.type === 'checkout.session.completed') {
