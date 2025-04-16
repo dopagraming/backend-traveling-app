@@ -81,8 +81,6 @@ const createBooking = asyncHandler(async (session) => {
         isConfirmed: true,
         notes: ""
     });
-    console.log(newDoc)
-    res.status(201).json({ data: newDoc });
 })
 
 // @desc    This webhook will run when stripe payment success paid
