@@ -82,6 +82,7 @@ const createBooking = asyncHandler(async (session) => {
         isConfirmed: true,
         notes: ""
     });
+    console.log(newDoc)
     res.status(201).json({ data: newDoc });
 })
 
