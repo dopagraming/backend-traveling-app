@@ -71,14 +71,13 @@ exports.checkoutSession = asyncHandler(async (req, res, next) => {
 
 const createBooking = asyncHandler(async (session) => {
     const newDoc = await bookingModel.create({
-        tripName: session.data.object.metadata.tripName,
         userName: session.data.object.customer_details.name,
-        userName: session.data.object.customer_details.email,
-        tripName: session.data.object.metadata.phoneNumber,
-        spotsBooked: session.data.object.metadata.spots,
+        userEmail: session.data.object.customer_details.email,
+        tripName: session.data.object.metadata.tripName,
+        userPhone: session.data.object.metadata.phoneNumber,
         spotsBooked: session.data.object.metadata.spots,
         totalPaid: session.data.object.metadata.totalPrice,
-        paymentMethod: "card",
+        paymentMethod: "credit_card",
         isConfirmed: true,
         notes: ""
     });
@@ -104,8 +103,11 @@ exports.webhookCheckout = asyncHandler(async (req, res, next) => {
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
     if (event.type === 'checkout.session.completed') {
-        createBooking(req.body)
+        console.log("checkout session completed ....")
+        createBooking(event)
     }
 
     res.status(200).json({ received: true });
 });
+
+
