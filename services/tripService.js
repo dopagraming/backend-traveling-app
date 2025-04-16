@@ -21,7 +21,6 @@ const multerStorage = multer.diskStorage({
     },
     filename: function (req, file, cb) {
         const filename = Date.now() + '-' + Math.round(Math.random() * 1E9)
-        console.log(req.body)
         cb(null, filename)
     }
 })

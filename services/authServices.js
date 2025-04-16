@@ -54,7 +54,6 @@ exports.protect = asyncHandler(async (req, res, next) => {
 
 exports.allowTo = (...roles) =>
     asyncHandler(async (req, res, next) => {
-        console.log(req.user.email)
         if (!roles.includes(req.user.role)) {
             return next(new apiError("You Can't access this route", 403));
         }

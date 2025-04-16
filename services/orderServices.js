@@ -98,11 +98,9 @@ exports.webhookCheckout = asyncHandler(async (req, res, next) => {
             "whsec_V8uGZTsI6wwNjmw6MyScG6NhWVF2VWEX"
         );
     } catch (err) {
-        console.log("there is problem here: ", err)
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
     if (event.type === 'checkout.session.completed') {
-        console.log("checkout session completed ....")
         createBooking(event)
     }
 

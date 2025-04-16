@@ -29,7 +29,6 @@ exports.updateOne = (Model) =>
 exports.getOne = (model, populateOpt) => (
     asyncHandler(async (req, res, next) => {
         const { id } = req.params;
-        console.log(id)
         // build query
         let query = model.findById(id)
         if (populateOpt) {
