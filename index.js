@@ -3,12 +3,12 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const compression = require("compression");
-
 const dbConnecion = require("./config/database");
-
 const apiError = require("./utils/apiError");
 const errorMiddleware = require("./middlewares/errorMiddleware");
 const mountRoutes = require("./routes");
+const { webhookCheckout } = require('./services/orderServices');
+
 dotenv.config({ path: "config.env" });
 
 const app = express();
@@ -27,7 +27,16 @@ app.options('*', cors());
 
 app.use(compression());
 
+
+app.post(
+  '/webhook-checkout',
+  express.raw({ type: 'application/json' }),
+  webhookCheckout
+);
+
+
 mountRoutes(app)
+
 
 app.all("*", (req, res, next) => {
   next(new apiError(`Can't Find This route : ${req.originalUrl}`, 400));
