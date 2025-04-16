@@ -12,6 +12,14 @@ const { webhookCheckout } = require('./services/orderServices');
 dotenv.config({ path: "config.env" });
 
 const app = express();
+
+
+app.post(
+  '/webhook-checkout',
+  express.raw({ type: 'application/json' }),
+  webhookCheckout
+);
+
 app.use(express.json());
 
 
@@ -28,11 +36,7 @@ app.options('*', cors());
 app.use(compression());
 
 
-app.post(
-  '/webhook-checkout',
-  express.raw({ type: 'application/json' }),
-  webhookCheckout
-);
+
 
 
 mountRoutes(app)
