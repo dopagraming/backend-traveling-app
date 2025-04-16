@@ -53,6 +53,13 @@ exports.checkoutSession = asyncHandler(async (req, res, next) => {
         cancel_url: `${req.protocol}://${req.get('host')}`,
         customer_email: data.email,
         client_reference_id: dateId,
+        metadata: {
+            tripName: trip.title,
+            date: selectedDate.date,
+            spots,
+            totalPrice,
+            phoneNumber: data.phone
+        },
         cancel_url: `${req.protocol}://${req.get('host')}`
     });
 
