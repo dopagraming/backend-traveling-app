@@ -3,6 +3,7 @@ const TripModel = require("../models/TripModel")
 const stripe = require('stripe')(`${process.env.STRIPE_SECRET}`);
 const asyncHandler = require('express-async-handler');
 const ApiError = require('../utils/apiError');
+const bookingModel = require("../models/bookingModel");
 
 // @desc    Get checkout session from stripe and send it as response
 // @route   GET /api/v1/orders/checkout-session/TripId
@@ -68,6 +69,22 @@ exports.checkoutSession = asyncHandler(async (req, res, next) => {
 });
 
 
+const createBooking = asyncHandler(async (session) => {
+    const newDoc = await bookingModel.create({
+        tripName: session.data.object.metadata.tripName,
+        userName: session.data.object.customer_details.name,
+        userName: session.data.object.customer_details.email,
+        tripName: session.data.object.metadata.phoneNumber,
+        spotsBooked: session.data.object.metadata.spots,
+        spotsBooked: session.data.object.metadata.spots,
+        totalPaid: session.data.object.metadata.totalPrice,
+        paymentMethod: "card",
+        isConfirmed: true,
+        notes: ""
+    });
+    res.status(201).json({ data: newDoc });
+})
+
 // @desc    This webhook will run when stripe payment success paid
 // @route   POST /webhook-checkout
 // @access  Protected/User
@@ -86,7 +103,7 @@ exports.webhookCheckout = asyncHandler(async (req, res, next) => {
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
     if (event.type === 'checkout.session.completed') {
-        console.log("Create Booking")
+        createBooking(req.body)
     }
 
     res.status(200).json({ received: true });
