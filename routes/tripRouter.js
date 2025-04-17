@@ -1,5 +1,5 @@
 const express = require("express");
-const { createTrip, getTrip, updateTrip, deleteTrip, getAllTrips, checkavailability } = require("../services/tripService");
+const { createTrip, getTrip, updateTrip, deleteTrip, getAllTrips, checkavailability, searching } = require("../services/tripService");
 const { createTripValidator, getTripValidator, updateTripValidator, deleteTripValidator } = require("../utils/validators/tripValidator");
 const router = express.Router()
 
@@ -9,4 +9,5 @@ router.route("/:id")
     .put(updateTripValidator, updateTrip)
     .delete(deleteTripValidator, deleteTrip)
 router.post("/checkavailability", checkavailability)
+router.post("/search-trips", searching)
 module.exports = router

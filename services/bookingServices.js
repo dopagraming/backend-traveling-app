@@ -5,7 +5,7 @@ const { deleteOne, updateOne, getOne, getGroup, createOne } = require("./handleb
 // @ route Get /api/v1/bookings
 // @access Private
 
-exports.getAllBookings = getGroup(BookingModel, "trip")
+exports.getAllBookings = getGroup(BookingModel, "tripName")
 
 
 // @desc Get Specific Booking

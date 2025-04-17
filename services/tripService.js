@@ -73,3 +73,21 @@ exports.checkavailability = asyncHandler(async (req, res, next) => {
     res.status(200).json({ availability, trip, selectedDate });
 });
 
+//@desc search 
+//@ route post /api/v1/trips/search-trips
+//@access public
+
+
+exports.searching = asyncHandler(async (req, res, next) => {
+    const regex = new RegExp(req.body.keyword, "i");
+
+    const trips = await TripModel.find({
+        $or: [
+            { slug: { $regex: regex } },
+            { title: { $regex: regex } },
+            { description: { $regex: regex } },
+        ],
+    }).select("title");
+
+    res.status(200).json(trips);
+});
