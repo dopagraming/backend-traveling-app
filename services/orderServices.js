@@ -50,8 +50,8 @@ exports.checkoutSession = asyncHandler(async (req, res, next) => {
             quantity: 1
         }],
         mode: 'payment',
-        success_url: `${req.protocol}://${req.get('host')}`,
-        cancel_url: `${req.protocol}://${req.get('host')}`,
+        success_url: `https://frontend-traveling-app.vercel.app/`,
+        cancel_url: `https://frontend-traveling-app.vercel.app/`,
         customer_email: data.email,
         client_reference_id: dateId,
         metadata: {
@@ -61,7 +61,7 @@ exports.checkoutSession = asyncHandler(async (req, res, next) => {
             totalPrice,
             phoneNumber: data.phone
         },
-        cancel_url: `${req.protocol}://${req.get('host')}`
+        cancel_url: `https://frontend-traveling-app.vercel.app/`
     });
 
     // 4) send session to response
