@@ -22,11 +22,18 @@ const tripSchema = new mongoose.Schema({
         required: [true, "Description is required"],
         maxlength: [2000, "Description is too long"]
     },
-    itinerary: {
-        type: [String],
-        maxlength: [200, "Itinerary is too long"],
-        required: [true, "itinerary is required"]
-    },
+    itinerary: [
+        {
+            day: {
+                type: String,
+                required: true
+            },
+            description: {
+                type: String,
+                required: true
+            }
+        }
+    ],
     duration: {
         type: String,
         trim: true
@@ -36,7 +43,7 @@ const tripSchema = new mongoose.Schema({
         type: String,
         required: [true, "Cover image is required"]
     },
-    videos: String,
+    video: String,
     destination: {
         type: String,
         trim: true
@@ -97,7 +104,10 @@ const tripSchema = new mongoose.Schema({
         default: 0
     },
 
-    tripLanguage: String
+    tripLanguage: {
+        type: String,
+        required: [true, "trip Language required"]
+    }
 }, {
     timestamps: true,
     toJSON: { virtuals: true },

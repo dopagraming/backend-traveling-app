@@ -44,7 +44,7 @@ class apiFeatuer {
     }
     paginate(documnetCount) {
         const page = this.queryString.page * 1 || 1;
-        const limit = this.queryString.limit * 1 || 10;
+        const limit = this.queryString.limit * 1 || 20;
         const skip = (page - 1) * limit;
         const endIndex = page * limit // 1 10 10
 

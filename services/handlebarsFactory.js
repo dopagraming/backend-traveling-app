@@ -55,10 +55,7 @@ exports.getGroup = (model, populateOpt) => (
         const documnetCount = await model.countDocuments()
         let query = new ApiFeatuer(model.find(filter), req.query)
             .paginate(documnetCount)
-            .filter()
-            .search()
-            .limitFields()
-            .sort()
+
 
         const { mongooseQuery, paginationResult } = query
 
