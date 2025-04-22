@@ -48,9 +48,10 @@ const tripSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    type: {
-        type: String,
-        default: 'Adventure'
+    category: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'Category',
+        requried: [true, "category is required"],
     },
     tripRoute: [
         {

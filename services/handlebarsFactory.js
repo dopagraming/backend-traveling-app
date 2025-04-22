@@ -49,25 +49,23 @@ exports.getOne = (model, populateOpt) => (
 exports.getGroup = (model, populateOpt) => (
     asyncHandler(async (req, res, next) => {
         let filter = {}
-        if (req.filterObj) {
-            filter = req.filterObj
+        if (req.query) {
+            filter = req.query
         }
-        const documnetCount = await model.countDocuments()
-        let query = new ApiFeatuer(model.find(filter), req.query)
-            .paginate(documnetCount)
-
-
-        const { mongooseQuery, paginationResult } = query
+        
+        let groupQuery = model.find(filter)
 
         if (populateOpt) {
-            mongooseQuery.populate({ path: populateOpt, select: "title" })
+            groupQuery = groupQuery.populate({ path: populateOpt, select: "title" })
         }
 
-        const group = await mongooseQuery
+        const group = await groupQuery
+
+
         if (!group) {
             return next(new apiError(`There Is No Docs`, 404))
         }
-        res.status(200).json({ paginationResult, data: group })
+        res.status(200).json({ data: group })
     })
 )
 exports.createOne = (Model) =>
