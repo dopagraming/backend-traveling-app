@@ -1,5 +1,5 @@
 const asyncHandler = require('express-async-handler');
-const ApiFeatuer = require("../utils/apiFeatures");
+const ApiFeatuers = require("../utils/apiFeatures");
 const apiError = require('../utils/apiError');
 exports.deleteOne = (Model) =>
     asyncHandler(async (req, res, next) => {
@@ -46,30 +46,45 @@ exports.getOne = (model, populateOpt) => (
 )
 
 
-exports.getGroup = (model, populateOpt) => (
-    asyncHandler(async (req, res, next) => {
-        let filter = {}
-        if (req.query) {
-            filter = req.query
+exports.getGroup = (model, populateOpt) =>
+    asyncHandler(async (req, res) => {
+        let filter = {};
+        if (req.filterObj) {
+            filter = req.filterObj;
         }
-        
-        let groupQuery = model.find(filter)
+
+        const documentsCounts = await model.countDocuments();
+        const apiFeatures = new ApiFeatuers(model.find(filter), req.query)
+            .paginate(documentsCounts).sort()
+            .filter()
+            .search()
+            .limitFields()
+
+        let { mongooseQuery, paginationResult } = apiFeatures;
 
         if (populateOpt) {
-            groupQuery = groupQuery.populate({ path: populateOpt, select: "title" })
+            mongooseQuery = mongooseQuery.populate({
+                path: 'category',
+                select: 'title _id'
+            });
         }
 
-        const group = await groupQuery
+        const documents = await mongooseQuery;
+        res
+            .status(200)
+            .json({ results: documents.length, paginationResult, data: documents });
+    });
 
-
-        if (!group) {
-            return next(new apiError(`There Is No Docs`, 404))
-        }
-        res.status(200).json({ data: group })
-    })
-)
 exports.createOne = (Model) =>
     asyncHandler(async (req, res) => {
         const newDoc = await Model.create(req.body);
         res.status(201).json({ data: newDoc });
     });
+
+
+exports.setCategoryIdToFilter = (req, res, next) => {
+    if (req.params.category) {
+        req.filterObj = { category: req.params.category };
+    }
+    next();
+};
