@@ -5,7 +5,7 @@ class apiFeatuer {
     }
     filter() {
         const queryStringObj = { ...this.queryString };
-        const excludesFields = ["sort", 'limit', 'page', 'field', 'type']
+        const excludesFields = ["sort", "fields", "keywords", "page", "limit"]
         excludesFields.forEach((field) => delete queryStringObj[field]);
         let queryStr = JSON.stringify(queryStringObj)
         queryStr = queryStr
@@ -32,7 +32,6 @@ class apiFeatuer {
         }
         return this
     }
-    // Red
     search() {
         if (this.queryString.keywords) {
             const query = {}
