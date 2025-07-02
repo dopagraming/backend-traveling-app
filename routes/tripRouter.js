@@ -6,8 +6,11 @@ const {
   updateTrip,
   deleteTrip,
   searchTrips,
+  advancedSearch,
+  getPopularDestinations,
   checkAvailability,
   addReview,
+  getTripSuggestions,
 } = require('../services/tripService');
 
 const {
@@ -23,8 +26,11 @@ const router = express.Router();
 
 // Public routes
 router.get('/', getTrips);
+router.get('/popular-destinations', getPopularDestinations);
 router.get('/:id', getTripValidator, getTrip);
 router.post('/search-trips', searchTrips);
+router.post('/advanced-search', advancedSearch);
+router.post('/suggestions', getTripSuggestions);
 router.post('/checkavailability', checkAvailability);
 
 // Protected routes
