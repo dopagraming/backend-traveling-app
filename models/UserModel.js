@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
     },
     phone: String,
-    profileImg: String,
+    avatar: String,
     password: {
       type: String,
       required: [true, 'Password is required'],
@@ -40,6 +40,17 @@ const userSchema = new mongoose.Schema(
         ref: 'Trip',
       },
     ],
+    totalTrips: {
+      type: Number,
+      default: 0
+    },
+    leve: {
+      type: String,
+    },
+    points: {
+      type: Number,
+      default: 0
+    }
   },
   {
     timestamps: true,
@@ -48,7 +59,7 @@ const userSchema = new mongoose.Schema(
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  
+
   // Hash the password with cost of 12
   this.password = await bcrypt.hash(this.password, 12);
   next();
