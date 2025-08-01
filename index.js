@@ -19,7 +19,11 @@ const app = express();
 // Middlewares
 app.use(cors());
 app.use(express.json({ limit: '20kb' }));
-app.use(express.static(path.join(__dirname, 'uploads')));
+app.use(
+  '/uploads/companies',
+  express.static(path.join(__dirname, 'uploads', 'companies'))
+);
+
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));

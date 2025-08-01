@@ -43,6 +43,11 @@ const bookingSchema = new mongoose.Schema(
       default: 'credit_card',
     },
     notes: String,
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: true
+    }
   },
   {
     timestamps: true,

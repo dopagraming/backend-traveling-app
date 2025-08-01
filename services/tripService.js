@@ -5,26 +5,23 @@ const Trip = require('../models/TripModel');
 const ApiError = require('../utils/apiError');
 const ApiFeatures = require('../utils/apiFeatures');
 
-// @desc    Get list of trips
-// @route   GET /api/v1/trips
-// @access  Public
 exports.getTrips = asyncHandler(async (req, res) => {
-  // Build query
-  const documentsCount = await Trip.countDocuments();
-  const apiFeatures = new ApiFeatures(Trip.find(), req.query)
+  const filter = (req.user && req.user.role !== 'super-admin')
+    ? { company: req.user.company }
+    : {};
+
+  const count = await Trip.countDocuments(filter);
+  const apiFeatures = new ApiFeatures(Trip.find(filter), req.query)
     .filter()
     .search()
     .sort()
     .limitFields()
-    .paginate(documentsCount);
+    .paginate(count);
 
-  // Execute query
-  const { mongooseQuery, paginationResult } = apiFeatures;
-  const trips = await mongooseQuery;
-
+  const trips = await apiFeatures.mongooseQuery;
   res.status(200).json({
     results: trips.length,
-    paginationResult,
+    paginationResult: apiFeatures.paginationResult,
     data: trips,
   });
 });
@@ -34,9 +31,14 @@ exports.getTrips = asyncHandler(async (req, res) => {
 // @access  Public
 exports.getTrip = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const trip = await Trip.findById(id);
+  const criteria = { _id: id };
+  if (req.user && req.user.role !== 'super-admin') {
+    criteria.company = req.user.company;
+  }
+
+  const trip = await Trip.findOne(criteria);
   if (!trip) {
-    return next(new ApiError(`No trip for this id ${id}`, 404));
+    return next(new ApiError(`No trip found for id ${id}`, 404));
   }
   res.status(200).json({ data: trip });
 });
@@ -45,7 +47,14 @@ exports.getTrip = asyncHandler(async (req, res, next) => {
 // @route   POST /api/v1/trips
 // @access  Private/Admin-Manager
 exports.createTrip = asyncHandler(async (req, res) => {
+  // slug
   req.body.slug = slugify(req.body.title);
+
+  // company inject
+  if (req.user.role !== 'super-admin') {
+    req.body.company = req.user.company;
+  }
+
   const trip = await Trip.create(req.body);
   res.status(201).json({ data: trip });
 });
@@ -55,27 +64,36 @@ exports.createTrip = asyncHandler(async (req, res) => {
 // @access  Private/Admin-Manager
 exports.updateTrip = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-
   if (req.body.title) {
     req.body.slug = slugify(req.body.title);
   }
 
-  const trip = await Trip.findByIdAndUpdate(id, req.body, {
-    new: true,
-  });
+  // build criteria
+  const criteria = { _id: id };
+  if (req.user.role !== 'super-admin') {
+    criteria.company = req.user.company;
+  }
 
+  const trip = await Trip.findOneAndUpdate(criteria, req.body, {
+    new: true,
+    runValidators: true,
+  });
   if (!trip) {
-    return next(new ApiError(`No trip for this id ${id}`, 404));
+    return next(new ApiError(`No trip found for id ${id}`, 404));
   }
   res.status(200).json({ data: trip });
 });
 
 // @desc    Delete specific trip
 // @route   DELETE /api/v1/trips/:id
-// @access  Private/Admin
+// @access  Private (super-admin, company-admin)
 exports.deleteTrip = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const trip = await Trip.findByIdAndDelete(id);
+  const filter = { _id: id };
+  if (req.user.role !== 'super-admin') {
+    filter.company = req.user.company;
+  }
+  const trip = await Trip.findOneAndDelete(filter);
   if (!trip) {
     return next(new ApiError(`No trip for this id ${id}`, 404));
   }

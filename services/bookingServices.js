@@ -4,58 +4,67 @@ const Booking = require('../models/bookingModel');
 const Trip = require('../models/TripModel');
 const ApiError = require('../utils/apiError');
 
-// @desc    Get list of bookings
+// @desc    Get all bookings (company‑scoped for non‑super-admins)
 // @route   GET /api/v1/bookings
-// @access  Private/Admin-Manager
+// @access  Private (super-admin, company-admin)
 exports.getBookings = asyncHandler(async (req, res) => {
-  const bookings = await Booking.find();
+  const filter = {};
+  if (req.user.role !== 'super-admin') {
+    filter.company = req.user.company;
+  }
+
+  const bookings = await Booking.find(filter);
   res.status(200).json({ data: bookings });
 });
 
 // @desc    Get specific booking by id
 // @route   GET /api/v1/bookings/:id
-// @access  Private/Admin-Manager-User
+// @access  Private (super-admin, company-admin, user)  
 exports.getBooking = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const booking = await Booking.findById(id);
-  
+  // populate trip.company so we can check scope
+  const booking = await Booking.findById(id).populate('trip', 'company user');
   if (!booking) {
-    return next(new ApiError(`No booking for this id ${id}`, 404));
+    return next(new ApiError(`No booking for id ${id}`, 404));
   }
-  
-  // Check if user is owner of booking or admin/manager
-  if (req.user.role === 'user' && booking.user._id.toString() !== req.user._id.toString()) {
-    return next(new ApiError(`You are not authorized to access this booking`, 403));
+
+  // user can only see their own
+  if (req.user.role === 'user') {
+    if (booking.user.toString() !== req.user._id.toString()) {
+      return next(new ApiError('Forbidden', 403));
+    }
   }
-  
+  // company-admin can only see company bookings
+  else if (req.user.role !== 'super-admin') {
+    if (booking.trip.company.toString() !== req.user.company.toString()) {
+      return next(new ApiError('Forbidden', 403));
+    }
+  }
+
   res.status(200).json({ data: booking });
 });
 
-// @desc    Create booking
+// @desc    Create a booking
 // @route   POST /api/v1/bookings
-// @access  Private/User
+// @access  Private (user)
 exports.createBooking = asyncHandler(async (req, res, next) => {
-  // 1) Get trip and check availability
   const trip = await Trip.findById(req.body.trip);
   if (!trip) {
     return next(new ApiError(`No trip found with id ${req.body.trip}`, 404));
   }
-  
-  // 2) Find the selected date in availability
+
   const selectedDate = trip.availability.id(req.body.availabilityId);
   if (!selectedDate) {
-    return next(new ApiError(`No availability found for this date`, 404));
+    return next(new ApiError('No availability for this date', 404));
   }
-  
-  // 3) Check if enough spots are available
   if (selectedDate.availableSpots < req.body.sitesBooked) {
-    return next(new ApiError(`Not enough spots available for this date`, 400));
+    return next(new ApiError('Not enough spots available', 400));
   }
-  
-  // 4) Create booking
+
   const booking = await Booking.create({
     user: req.user._id,
     trip: trip._id,
+    company: trip.company,       // ← inject company
     tripName: trip.title,
     userName: req.user.name,
     userEmail: req.user.email,
@@ -67,67 +76,71 @@ exports.createBooking = asyncHandler(async (req, res, next) => {
     paymentMethod: req.body.paymentMethod,
     notes: req.body.notes,
   });
-  
-  // 5) Update trip availability
+
+  // decrement availability
   selectedDate.availableSpots -= req.body.sitesBooked;
   await trip.save();
-  
+
   res.status(201).json({ data: booking });
 });
 
 // @desc    Update booking status
 // @route   PUT /api/v1/bookings/:id
-// @access  Private/Admin-Manager
+// @access  Private (super-admin, company-admin)
 exports.updateBookingStatus = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const booking = await Booking.findByIdAndUpdate(
-    id,
+  const filter = { _id: id };
+  if (req.user.role !== 'super-admin') {
+    filter.company = req.user.company;
+  }
+
+  const booking = await Booking.findOneAndUpdate(
+    filter,
     { isConfirmed: req.body.isConfirmed },
     { new: true }
   );
-  
   if (!booking) {
-    return next(new ApiError(`No booking for this id ${id}`, 404));
+    return next(new ApiError(`No booking for id ${id}`, 404));
   }
-  
   res.status(200).json({ data: booking });
 });
 
 // @desc    Delete booking
 // @route   DELETE /api/v1/bookings/:id
-// @access  Private/Admin
+// @access  Private (super-admin, company-admin)
 exports.deleteBooking = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  const booking = await Booking.findByIdAndDelete(id);
-  
-  if (!booking) {
-    return next(new ApiError(`No booking for this id ${id}`, 404));
+  const filter = { _id: id };
+  if (req.user.role !== 'super-admin') {
+    filter.company = req.user.company;
   }
-  
-  // If booking is deleted, update trip availability to add back the spots
+
+  const booking = await Booking.findOneAndDelete(filter);
+  if (!booking) {
+    return next(new ApiError(`No booking for id ${id}`, 404));
+  }
+
+  // restore availability
   const trip = await Trip.findById(booking.trip);
   if (trip) {
-    // Find the booking date in availability
-    const bookingDateObj = new Date(booking.bookingDate);
-    const availabilityItem = trip.availability.find(item => 
-      new Date(item.date).toDateString() === bookingDateObj.toDateString()
+    const slot = trip.availability.find(a =>
+      new Date(a.date).toDateString() ===
+      new Date(booking.bookingDate).toDateString()
     );
-    
-    if (availabilityItem) {
-      availabilityItem.availableSpots += booking.sitesBooked;
+    if (slot) {
+      slot.availableSpots += booking.sitesBooked;
       await trip.save();
     }
   }
-  
+
   res.status(204).send();
 });
 
-// @desc    Get bookings for specific user
+// @desc    Get current user’s bookings
 // @route   GET /api/v1/bookings/my-bookings
-// @access  Private/User
+// @access  Private (user)
 exports.getMyBookings = asyncHandler(async (req, res) => {
   const bookings = await Booking.find({ user: req.user._id });
-  
   res.status(200).json({
     results: bookings.length,
     data: bookings,

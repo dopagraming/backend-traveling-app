@@ -45,7 +45,7 @@ router.route('/wishlist')
 router.delete('/wishlist/:tripId', removeTripFromWishlist);
 
 // Admin routes
-router.use(allowedTo('admin', 'manager'));
+router.use(allowedTo('super-admin'));
 
 router.put(
   '/changePassword/:id',

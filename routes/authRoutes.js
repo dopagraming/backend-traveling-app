@@ -7,6 +7,9 @@ const {
   resetPassword,
   requireAuth,
   getMe,
+  updatePasswordForCompanyAdmin,
+  protect,
+  allowedTo,
 } = require('../services/authServices');
 
 const {
@@ -23,5 +26,11 @@ router.post('/verifyResetCode', verifyPassResetCode);
 router.post('/resetPassword', resetPassword);
 router.get('/requireAuth', requireAuth);
 router.get('/me', getMe);
+router.put(
+  '/:companyId/change-password',
+  protect,
+  allowedTo('company-admin'),
+  updatePasswordForCompanyAdmin
+);
 
 module.exports = router;

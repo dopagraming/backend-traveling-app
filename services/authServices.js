@@ -222,3 +222,17 @@ exports.getMe = asyncHandler(async (req, res, next) => {
   req.params.id = req.user._id;
   next();
 });
+
+// @desc    Put update password for company admin
+// @route   PUT /api/v1/auth/:companyId/change-password
+// @access  Protected
+exports.updatePasswordForCompanyAdmin = asyncHandler(async (req, res, next) => {
+  const { currentPassword, newPassword } = req.body;
+  const user = await User.findById(req.user._id).select('+password');
+  if (!(await user.correctPassword(currentPassword, user.password))) {
+    return next(new ApiError('Incorrect current password', 401));
+  }
+  user.password = newPassword;
+  await user.save();
+  res.status(200).json({ message: 'Password updated' });
+});

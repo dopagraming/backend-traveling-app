@@ -1,3 +1,4 @@
+// models/UserModel.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -25,15 +26,33 @@ const userSchema = new mongoose.Schema(
     passwordResetCode: String,
     passwordResetExpires: Date,
     passwordResetVerified: Boolean,
+
+    // ── ROLE & COMPANY ───────────────────────────────────────────────────────
     role: {
       type: String,
-      enum: ['user', 'admin', 'manager'],
+      enum: [
+        'user',         // normal end‑customer
+        'super-admin',  // full platform admin
+        'company-admin',// manages one company
+        'company-user'  // sub‑user under a company
+      ],
       default: 'user',
     },
+    company: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Company',
+      required: function () {
+        // only require company for company-admin or company-user
+        return ['company-admin', 'company-user'].includes(this.role);
+      }
+    },
+
     active: {
       type: Boolean,
       default: true,
     },
+
+    // ── FOR BOOKING / GAMIFICATION ──────────────────────────────────────────
     wishlist: [
       {
         type: mongoose.Schema.ObjectId,
@@ -42,47 +61,43 @@ const userSchema = new mongoose.Schema(
     ],
     totalTrips: {
       type: Number,
-      default: 0
+      default: 0,
     },
-    leve: {
+    level: {
       type: String,
     },
     points: {
       type: Number,
-      default: 0
-    }
+      default: 0,
+    },
   },
   {
     timestamps: true,
   }
 );
 
+// Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-
-  // Hash the password with cost of 12
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
 
+// Compare password
 userSchema.methods.correctPassword = async function (
   candidatePassword,
   userPassword
 ) {
-  return await bcrypt.compare(candidatePassword, userPassword);
+  return bcrypt.compare(candidatePassword, userPassword);
 };
 
+// Check if password was changed after issuing JWT
 userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   if (this.passwordChangedAt) {
-    const changedTimestamp = parseInt(
-      this.passwordChangedAt.getTime() / 1000,
-      10
-    );
-    return JWTTimestamp < changedTimestamp;
+    const changed = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+    return JWTTimestamp < changed;
   }
   return false;
 };
 
-const User = mongoose.model('User', userSchema);
-
-module.exports = User;
+module.exports = mongoose.model('User', userSchema);
